@@ -79,38 +79,26 @@ if uploaded_file is not None:
         df_top = df[df['Listing_Position'].str.contains('top|상단', case=False, na=False)]
         df_bottom = df[df['Listing_Position'].str.contains('bottom|하단', case=False, na=False)]
         
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2 = st.columns(2)
         
         with col1:
-            st.metric(
-                "🔺 상단 가게 수", 
-                len(df_top),
-                delta=f"{len(df_top)/(len(df_top)+len(df_bottom))*100:.1f}%"
-            )
-        
-        with col2:
-            st.metric(
-                "🔻 하단 가게 수", 
-                len(df_bottom),
-                delta=f"{len(df_bottom)/(len(df_top)+len(df_bottom))*100:.1f}%"
-            )
-        
-        with col3:
             avg_sentiment_top = df_top['Sentiment_Score'].mean() if len(df_top) > 0 else 0
             avg_sentiment_bottom = df_bottom['Sentiment_Score'].mean() if len(df_bottom) > 0 else 0
             st.metric(
-                "😊 상단 평균 감정점수", 
-                f"{avg_sentiment_top:.2f}",
-                delta=f"{avg_sentiment_top - avg_sentiment_bottom:.2f}" if avg_sentiment_bottom > 0 else None
+                "😊 평균 감정 점수 (상단 vs 하단)", 
+                f"상단: {avg_sentiment_top:.2f}",
+                delta=f"하단: {avg_sentiment_bottom:.2f}",
+                delta_color="off"
             )
         
-        with col4:
+        with col2:
             avg_reviews_top = df_top['Visitor_Review_Count'].mean() if len(df_top) > 0 else 0
             avg_reviews_bottom = df_bottom['Visitor_Review_Count'].mean() if len(df_bottom) > 0 else 0
             st.metric(
-                "📝 상단 평균 리뷰수", 
-                f"{avg_reviews_top:.0f}",
-                delta=f"{avg_reviews_top - avg_reviews_bottom:.0f}" if avg_reviews_bottom > 0 else None
+                "📝 평균 방문자 리뷰 수 (상단 vs 하단)", 
+                f"상단: {avg_reviews_top:.0f}",
+                delta=f"하단: {avg_reviews_bottom:.0f}",
+                delta_color="off"
             )
         
         st.divider()
