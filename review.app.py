@@ -93,15 +93,15 @@ if uploaded_file is not None:
         fig1, ax1 = plt.subplots(1, 2, figsize=(14, 5))
         sns.boxplot(data=df, x='Listing_Position', y='Visitor_Review_Count', 
                    ax=ax1[0], palette='Set2')
-        ax1[0].set_title("방문자 리뷰 수", fontsize=14, fontweight='bold')
-        ax1[0].set_xlabel("위치", fontsize=12)
-        ax1[0].set_ylabel("리뷰 수", fontsize=12)
+        ax1[0].set_title("Visitor Review Count", fontsize=14, fontweight='bold')
+        ax1[0].set_xlabel("Position", fontsize=12)
+        ax1[0].set_ylabel("Count", fontsize=12)
         
         sns.boxplot(data=df, x='Listing_Position', y='Blog_Review_Count', 
                    ax=ax1[1], palette='Set3')
-        ax1[1].set_title("블로그 리뷰 수", fontsize=14, fontweight='bold')
-        ax1[1].set_xlabel("위치", fontsize=12)
-        ax1[1].set_ylabel("리뷰 수", fontsize=12)
+        ax1[1].set_title("Blog Review Count", fontsize=14, fontweight='bold')
+        ax1[1].set_xlabel("Position", fontsize=12)
+        ax1[1].set_ylabel("Count", fontsize=12)
         
         plt.tight_layout()
         st.pyplot(fig1)
@@ -122,10 +122,10 @@ if uploaded_file is not None:
             s=100,
             palette='viridis'
         )
-        ax2.set_title("감정 점수 vs 방문자 리뷰 수", fontsize=14, fontweight='bold')
-        ax2.set_xlabel("방문자 리뷰 수", fontsize=12)
-        ax2.set_ylabel("감정 점수", fontsize=12)
-        ax2.legend(title='위치')
+        ax2.set_title("Sentiment Score vs Visitor Review Count", fontsize=14, fontweight='bold')
+        ax2.set_xlabel("Visitor Review Count", fontsize=12)
+        ax2.set_ylabel("Sentiment Score", fontsize=12)
+        ax2.legend(title='Position')
         plt.tight_layout()
         st.pyplot(fig2)
         plt.close()
@@ -169,7 +169,7 @@ if uploaded_file is not None:
                 fig3, ax3 = plt.subplots(figsize=(14, 7))
                 ax3.imshow(wordcloud, interpolation='bilinear')
                 ax3.axis("off")
-                ax3.set_title("키워드 워드클라우드", fontsize=16, fontweight='bold', pad=20)
+                ax3.set_title("Keywords Word Cloud", fontsize=16, fontweight='bold', pad=20)
                 plt.tight_layout()
                 st.pyplot(fig3)
                 plt.close()
@@ -187,9 +187,9 @@ if uploaded_file is not None:
             
             fig4, ax4 = plt.subplots(figsize=(12, 6))
             sns.boxplot(data=df, x='Category', y='Sentiment_Score', palette='pastel')
-            ax4.set_title("카테고리별 감정 점수", fontsize=14, fontweight='bold')
-            ax4.set_xlabel("카테고리", fontsize=12)
-            ax4.set_ylabel("감정 점수", fontsize=12)
+            ax4.set_title("Sentiment Score by Category", fontsize=14, fontweight='bold')
+            ax4.set_xlabel("Category", fontsize=12)
+            ax4.set_ylabel("Sentiment Score", fontsize=12)
             plt.xticks(rotation=45, ha='right')
             plt.tight_layout()
             st.pyplot(fig4)
