@@ -42,8 +42,7 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
-    
-    st.success("✅ 데이터 로드 성공!")
+        st.success("✅ 데이터 로드 성공!")
         
         # 데이터 미리보기
         with st.expander("📋 데이터 미리보기 (처음 5행)", expanded=True):
