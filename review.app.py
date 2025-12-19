@@ -31,18 +31,64 @@ st.title("📊 네이버 지도 상단 vs 하단 노출 가게 비교 분석")
 st.markdown("### 🎯 리뷰 데이터를 통한 상위 노출 전략 인사이트")
 st.caption("상단과 하단 노출 가게의 리뷰, 감정, 키워드 차이를 분석하여 마케팅 전략을 도출합니다.")
 
-# 파일 업로드 위젯
-uploaded_file = st.file_uploader(
-    "📁 엑셀 파일을 업로드하세요 (네이버 지도 방문자 리뷰 데이터)",
-    type=['xlsx', 'xls'],
-    help="전처리된 네이버 지도 리뷰 데이터 파일을 업로드해주세요"
-)
+# 사이드바에 파일 업로드 옵션
+with st.sidebar:
+    st.header("⚙️ 데이터 설정")
+    upload_option = st.radio(
+        "데이터 선택:",
+        ["샘플 데이터 사용", "내 파일 업로드"],
+        index=0
+    )
+    
+    if upload_option == "내 파일 업로드":
+        uploaded_file = st.file_uploader(
+            "엑셀 파일 업로드",
+            type=['xlsx', 'xls'],
+            help="전처리된 네이버 지도 리뷰 데이터"
+        )
+    else:
+        uploaded_file = None
+    
+    st.divider()
+    st.caption("💡 샘플 데이터로 대시보드를 바로 확인하거나, 본인의 데이터를 업로드하여 분석할 수 있습니다.")
+
+# 데이터 로드 로직
+import os
+# 여러 가능한 파일명 시도
+possible_sample_files = [
+    "네이버 지도 방문자 리뷰(전처리 후 영어버전).xlsx",
+    "sample_data.xlsx",
+    "네이버 지도 방문자 리뷰(전처리 후).xlsx"
+]
+
+sample_file_path = None
+for file_name in possible_sample_files:
+    if os.path.exists(file_name):
+        sample_file_path = file_name
+        break
+
+# 업로드 파일이 있으면 그것 사용, 없으면 샘플 데이터 사용
+if upload_option == "내 파일 업로드" and uploaded_file is not None:
+    data_file = uploaded_file
+    st.info("📁 업로드한 파일을 분석합니다.")
+elif sample_file_path is not None:
+    data_file = sample_file_path
+    st.info("📊 샘플 데이터를 표시합니다. 사이드바에서 본인의 파일을 업로드할 수 있습니다.")
+else:
+    data_file = None
+    st.warning("⚠️ 샘플 데이터 파일을 찾을 수 없습니다. 사이드바에서 파일을 업로드해주세요.")
+    st.info("💡 샘플 파일명: '네이버 지도 방문자 리뷰(전처리 후 영어버전).xlsx' 또는 'sample_data.xlsx'")
+    st.stop()
 
 # 엑셀 파일 읽기
-if uploaded_file is not None:
-    try:
-        df = pd.read_excel(uploaded_file)
-        st.success("✅ 데이터 로드 성공!")
+try:
+    # 문자열(경로)이면 직접 읽고, 아니면 업로드된 파일로 읽기
+    if isinstance(data_file, str):
+        df = pd.read_excel(data_file)
+    else:
+        df = pd.read_excel(data_file)
+    
+    st.success("✅ 데이터 로드 성공!")
         
         # 데이터 미리보기
         with st.expander("📋 데이터 미리보기 (처음 5행)", expanded=True):
@@ -266,30 +312,3 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ 파일을 읽는 중 오류가 발생했습니다: {str(e)}")
         st.info("💡 엑셀 파일 형식이 올바른지 확인해주세요.")
-        
-else:
-    st.info("👆 상단에서 엑셀 파일을 업로드하면 분석이 시작됩니다.")
-    
-    # 사용 안내
-    with st.expander("📖 사용 방법", expanded=True):
-        st.markdown("""
-        ### 필수 컬럼
-        업로드하는 엑셀 파일에는 다음 컬럼들이 반드시 포함되어야 합니다:
-        
-        - `Listing_Position`: 리스팅 위치 (예: 상단, 하단)
-        - `Sentiment_Score`: 감정 점수
-        - `Visitor_Review_Count`: 방문자 리뷰 수
-        - `Blog_Review_Count`: 블로그 리뷰 수
-        - `Keywords_Excl_Food`: 키워드 (음식 제외)
-        
-        ### 선택 컬럼
-        - `Category`: 업종 카테고리 (있으면 추가 분석 제공)
-        
-        ### 지원 파일 형식
-        - `.xlsx` (Excel 2007 이상)
-        - `.xls` (Excel 97-2003)
-        
-        ### 한글 폰트 관련
-        - Windows: 맑은고딕, 나눔고딕 등 자동 감지
-        - 폰트가 깨질 경우 워드클라우드는 건너뛰고 다른 차트만 표시됩니다
-        """)
