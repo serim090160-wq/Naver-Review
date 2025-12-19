@@ -24,10 +24,12 @@ if platform.system() == 'Windows':
 elif platform.system() == 'Darwin':  # macOS
     plt.rcParams['font.family'] = 'AppleGothic'
 
-st.set_page_config(page_title="네이버 리뷰 분석", layout="wide")
+st.set_page_config(page_title="네이버 리뷰 분석", layout="wide", page_icon="📊")
 
 # 제목
-st.title("📊 네이버 지도 리뷰 데이터 분석 대시보드")
+st.title("📊 네이버 지도 상단 vs 하단 노출 가게 비교 분석")
+st.markdown("### 🎯 리뷰 데이터를 통한 상위 노출 전략 인사이트")
+st.caption("상단과 하단 노출 가게의 리뷰, 감정, 키워드 차이를 분석하여 마케팅 전략을 도출합니다.")
 
 # 파일 업로드 위젯
 uploaded_file = st.file_uploader(
@@ -68,6 +70,48 @@ if uploaded_file is not None:
         
         # 데이터 정리
         df['Listing_Position'] = df['Listing_Position'].astype(str)
+        
+        # 요약 통계
+        st.divider()
+        st.header("📊 핵심 인사이트: 상단 vs 하단 비교")
+        
+        # 상단/하단 데이터 분리
+        df_top = df[df['Listing_Position'].str.contains('top|상단', case=False, na=False)]
+        df_bottom = df[df['Listing_Position'].str.contains('bottom|하단', case=False, na=False)]
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(
+                "🔺 상단 가게 수", 
+                len(df_top),
+                delta=f"{len(df_top)/(len(df_top)+len(df_bottom))*100:.1f}%"
+            )
+        
+        with col2:
+            st.metric(
+                "🔻 하단 가게 수", 
+                len(df_bottom),
+                delta=f"{len(df_bottom)/(len(df_top)+len(df_bottom))*100:.1f}%"
+            )
+        
+        with col3:
+            avg_sentiment_top = df_top['Sentiment_Score'].mean() if len(df_top) > 0 else 0
+            avg_sentiment_bottom = df_bottom['Sentiment_Score'].mean() if len(df_bottom) > 0 else 0
+            st.metric(
+                "😊 상단 평균 감정점수", 
+                f"{avg_sentiment_top:.2f}",
+                delta=f"{avg_sentiment_top - avg_sentiment_bottom:.2f}" if avg_sentiment_bottom > 0 else None
+            )
+        
+        with col4:
+            avg_reviews_top = df_top['Visitor_Review_Count'].mean() if len(df_top) > 0 else 0
+            avg_reviews_bottom = df_bottom['Visitor_Review_Count'].mean() if len(df_bottom) > 0 else 0
+            st.metric(
+                "📝 상단 평균 리뷰수", 
+                f"{avg_reviews_top:.0f}",
+                delta=f"{avg_reviews_top - avg_reviews_bottom:.0f}" if avg_reviews_bottom > 0 else None
+            )
         
         st.divider()
         
@@ -133,49 +177,74 @@ if uploaded_file is not None:
         st.divider()
         
         # ------------------------
-        st.header("4️⃣ 키워드 기반 워드클라우드 (음식 키워드 제외)")
+        st.header("4️⃣ 키워드 비교 분석: 상단 vs 하단 (워드클라우드)")
+        st.subheader("🔍 상단과 하단 노출 가게의 키워드 차이를 한눈에 비교하세요")
         
-        text = " ".join(df["Keywords_Excl_Food"].dropna().astype(str))
-        if len(text.strip()) > 0:
-            # 한글 폰트 경로 찾기
-            font_path = None
-            if platform.system() == 'Windows':
-                import os
-                possible_fonts = [
-                    'c:/Windows/Fonts/malgun.ttf',
-                    'c:/Windows/Fonts/malgunbd.ttf',
-                    'c:/Windows/Fonts/NanumGothic.ttf',
-                    'c:/Windows/Fonts/gulim.ttc',
-                    'c:/Windows/Fonts/batang.ttc'
-                ]
-                for font in possible_fonts:
-                    if os.path.exists(font):
-                        font_path = font
-                        break
-            elif platform.system() == 'Darwin':
-                font_path = '/System/Library/Fonts/AppleGothic.ttf'
+        # 상단과 하단으로 데이터 분리
+        df_top = df[df['Listing_Position'].str.contains('top|상단', case=False, na=False)]
+        df_bottom = df[df['Listing_Position'].str.contains('bottom|하단', case=False, na=False)]
+        
+        # 키워드 텍스트 생성
+        text_top = " ".join(df_top["Keywords_Excl_Food"].dropna().astype(str))
+        text_bottom = " ".join(df_bottom["Keywords_Excl_Food"].dropna().astype(str))
+        
+        if len(text_top.strip()) > 0 or len(text_bottom.strip()) > 0:
+            col1, col2 = st.columns(2)
             
-            try:
-                wordcloud = WordCloud(
-                    width=1200,
-                    height=600,
-                    background_color='white',
-                    font_path=font_path,
-                    colormap='viridis',
-                    relative_scaling=0.5,
-                    min_font_size=10
-                ).generate(text)
-                
-                fig3, ax3 = plt.subplots(figsize=(14, 7))
-                ax3.imshow(wordcloud, interpolation='bilinear')
-                ax3.axis("off")
-                ax3.set_title("Keywords Word Cloud", fontsize=16, fontweight='bold', pad=20)
-                plt.tight_layout()
-                st.pyplot(fig3)
-                plt.close()
-            except Exception as e:
-                st.warning(f"⚠️ 워드클라우드 생성 중 오류: {str(e)}")
-                st.info("💡 한글 폰트 문제일 수 있습니다. 워드클라우드는 건너뜁니다.")
+            # 상단 워드클라우드
+            with col1:
+                st.markdown("### 🔺 상단 노출 가게")
+                if len(text_top.strip()) > 0:
+                    try:
+                        wordcloud_top = WordCloud(
+                            width=600,
+                            height=400,
+                            background_color='white',
+                            colormap='Blues',
+                            relative_scaling=0.5,
+                            min_font_size=10
+                        ).generate(text_top)
+                        
+                        fig_top, ax_top = plt.subplots(figsize=(8, 6))
+                        ax_top.imshow(wordcloud_top, interpolation='bilinear')
+                        ax_top.axis("off")
+                        ax_top.set_title("Top Position Keywords", fontsize=14, fontweight='bold', pad=10)
+                        plt.tight_layout()
+                        st.pyplot(fig_top)
+                        plt.close()
+                    except Exception as e:
+                        st.warning(f"⚠️ 상단 워드클라우드 오류: {str(e)}")
+                else:
+                    st.info("상단 가게 키워드 데이터 없음")
+            
+            # 하단 워드클라우드
+            with col2:
+                st.markdown("### 🔻 하단 노출 가게")
+                if len(text_bottom.strip()) > 0:
+                    try:
+                        wordcloud_bottom = WordCloud(
+                            width=600,
+                            height=400,
+                            background_color='white',
+                            colormap='Oranges',
+                            relative_scaling=0.5,
+                            min_font_size=10
+                        ).generate(text_bottom)
+                        
+                        fig_bottom, ax_bottom = plt.subplots(figsize=(8, 6))
+                        ax_bottom.imshow(wordcloud_bottom, interpolation='bilinear')
+                        ax_bottom.axis("off")
+                        ax_bottom.set_title("Bottom Position Keywords", fontsize=14, fontweight='bold', pad=10)
+                        plt.tight_layout()
+                        st.pyplot(fig_bottom)
+                        plt.close()
+                    except Exception as e:
+                        st.warning(f"⚠️ 하단 워드클라우드 오류: {str(e)}")
+                else:
+                    st.info("하단 가게 키워드 데이터 없음")
+            
+            # 인사이트 추가
+            st.info("💡 **분석 팁**: 상단 가게와 하단 가게의 키워드를 비교해보세요. 상단 가게에서 더 자주 나타나는 키워드가 상위 노출 전략의 핵심일 수 있습니다!")
         else:
             st.info("ℹ️ 키워드 데이터가 부족하거나 비어 있습니다.")
         
