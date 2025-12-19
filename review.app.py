@@ -92,7 +92,7 @@ try:
         
         # 데이터 미리보기
         with st.expander("📋 데이터 미리보기 (처음 5행)", expanded=True):
-            st.dataframe(df.head(), use_container_width=True)
+            st.dataframe(df.head())
         
         # 데이터 정보
         col1, col2, col3 = st.columns(3)
@@ -160,7 +160,7 @@ try:
             st.dataframe(avg_sentiment.reset_index().rename(columns={
                 'Listing_Position': '위치',
                 'Sentiment_Score': '평균 감정 점수'
-            }), use_container_width=True)
+            }))
         
         st.divider()
         
