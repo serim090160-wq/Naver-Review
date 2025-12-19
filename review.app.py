@@ -4,17 +4,37 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from wordcloud import WordCloud
 import platform
+import matplotlib.font_manager as fm
 
 # matplotlib 한글 폰트 설정
 plt.rcParams['axes.unicode_minus'] = False
 
-# 운영체제별 한글 폰트 설정
-if platform.system() == 'Windows':
-    plt.rcParams['font.family'] = 'Malgun Gothic'
-elif platform.system() == 'Darwin':  # macOS
-    plt.rcParams['font.family'] = 'AppleGothic'
-else:  # Linux (Streamlit Cloud)
-    plt.rcParams['font.family'] = 'DejaVu Sans'
+# 운영체제별 한글 폰트 설정 (더 견고한 방법)
+def set_korean_font():
+    if platform.system() == 'Windows':
+        # Windows 환경: 여러 폰트 시도
+        font_list = ['Malgun Gothic', 'NanumGothic', 'NanumBarunGothic', 'AppleGothic']
+        for font in font_list:
+            try:
+                plt.rcParams['font.family'] = font
+                # 테스트로 한글 렌더링 시도
+                fig, ax = plt.subplots()
+                ax.text(0.5, 0.5, '한글테스트')
+                plt.close(fig)
+                return font
+            except:
+                continue
+        # 모든 폰트 실패 시 기본 폰트
+        plt.rcParams['font.family'] = 'sans-serif'
+        return 'sans-serif'
+    elif platform.system() == 'Darwin':  # macOS
+        plt.rcParams['font.family'] = 'AppleGothic'
+        return 'AppleGothic'
+    else:  # Linux (Streamlit Cloud)
+        plt.rcParams['font.family'] = 'DejaVu Sans'
+        return 'DejaVu Sans'
+
+current_font = set_korean_font()
 
 st.set_page_config(page_title="네이버 리뷰 분석", layout="wide")
 
@@ -126,31 +146,46 @@ if uploaded_file is not None:
         
         text = " ".join(df["Keywords_Excl_Food"].dropna().astype(str))
         if len(text.strip()) > 0:
-            # 한글 폰트 경로 설정 (시스템별)
+            # 한글 폰트 경로 설정 (시스템별, 여러 경로 시도)
             font_path = None
             if platform.system() == 'Windows':
-                font_path = 'c:/Windows/Fonts/malgun.ttf'
+                # Windows 여러 폰트 경로 시도
+                possible_fonts = [
+                    'c:/Windows/Fonts/malgun.ttf',
+                    'c:/Windows/Fonts/malgunbd.ttf',
+                    'c:/Windows/Fonts/NanumGothic.ttf',
+                    'C:/Windows/Fonts/gulim.ttc'
+                ]
+                import os
+                for font in possible_fonts:
+                    if os.path.exists(font):
+                        font_path = font
+                        break
             elif platform.system() == 'Darwin':
                 font_path = '/System/Library/Fonts/AppleGothic.ttf'
             # Linux는 기본값 사용
             
-            wordcloud = WordCloud(
-                width=1200,
-                height=600,
-                background_color='white',
-                font_path=font_path,
-                colormap='viridis',
-                relative_scaling=0.5,
-                min_font_size=10
-            ).generate(text)
-            
-            fig3, ax3 = plt.subplots(figsize=(14, 7))
-            ax3.imshow(wordcloud, interpolation='bilinear')
-            ax3.axis("off")
-            ax3.set_title("☁️ 키워드 워드클라우드", fontsize=16, fontweight='bold', pad=20)
-            plt.tight_layout()
-            st.pyplot(fig3)
-            plt.close()
+            try:
+                wordcloud = WordCloud(
+                    width=1200,
+                    height=600,
+                    background_color='white',
+                    font_path=font_path,
+                    colormap='viridis',
+                    relative_scaling=0.5,
+                    min_font_size=10
+                ).generate(text)
+                
+                fig3, ax3 = plt.subplots(figsize=(14, 7))
+                ax3.imshow(wordcloud, interpolation='bilinear')
+                ax3.axis("off")
+                ax3.set_title("☁️ 키워드 워드클라우드", fontsize=16, fontweight='bold', pad=20)
+                plt.tight_layout()
+                st.pyplot(fig3)
+                plt.close()
+            except Exception as e:
+                st.warning(f"⚠️ 워드클라우드 생성 중 오류: {str(e)}")
+                st.info("한글 폰트가 설치되어 있지 않을 수 있습니다.")
         else:
             st.info("ℹ️ 키워드 데이터가 부족하거나 비어 있습니다.")
         
