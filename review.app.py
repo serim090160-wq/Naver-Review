@@ -3,87 +3,56 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from wordcloud import WordCloud
-import platform
-import matplotlib.font_manager as fm
 
-# matplotlib 한글 폰트 설정
-plt.rcParams['axes.unicode_minus'] = False
+# Set page config
+st.set_page_config(page_title="Naver Review Analysis", layout="wide")
 
-# 운영체제별 한글 폰트 설정 (더 견고한 방법)
-def set_korean_font():
-    if platform.system() == 'Windows':
-        # Windows 환경: 여러 폰트 시도
-        font_list = ['Malgun Gothic', 'NanumGothic', 'NanumBarunGothic', 'AppleGothic']
-        for font in font_list:
-            try:
-                plt.rcParams['font.family'] = font
-                # 테스트로 한글 렌더링 시도
-                fig, ax = plt.subplots()
-                ax.text(0.5, 0.5, '한글테스트')
-                plt.close(fig)
-                return font
-            except:
-                continue
-        # 모든 폰트 실패 시 기본 폰트
-        plt.rcParams['font.family'] = 'sans-serif'
-        return 'sans-serif'
-    elif platform.system() == 'Darwin':  # macOS
-        plt.rcParams['font.family'] = 'AppleGothic'
-        return 'AppleGothic'
-    else:  # Linux (Streamlit Cloud)
-        plt.rcParams['font.family'] = 'DejaVu Sans'
-        return 'DejaVu Sans'
+# Title
+st.title("📊 Naver Map Review Data Analysis Dashboard")
 
-current_font = set_korean_font()
-
-st.set_page_config(page_title="네이버 리뷰 분석", layout="wide")
-
-# 제목
-st.title("📊 네이버 지도 리뷰 데이터 분석 대시보드")
-
-# 파일 업로드 위젯
+# File uploader widget
 uploaded_file = st.file_uploader(
-    "📁 엑셀 파일을 업로드하세요 (네이버 지도 방문자 리뷰 데이터)",
+    "📁 Upload Excel file (Naver Map Visitor Review Data)",
     type=['xlsx', 'xls'],
-    help="전처리된 네이버 지도 리뷰 데이터 파일을 업로드해주세요"
+    help="Please upload preprocessed Naver Map review data file"
 )
 
-# 엑셀 파일 읽기
+# Read Excel file
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
-        st.success("✅ 데이터 로드 성공!")
+        st.success("✅ Data loaded successfully!")
         
-        # 데이터 미리보기
-        with st.expander("� 데이터 미리보기 (처음 5행)", expanded=True):
+        # Data preview
+        with st.expander("📋 Data Preview (First 5 rows)", expanded=True):
             st.dataframe(df.head(), use_container_width=True)
         
-        # 데이터 정보
+        # Data information
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("총 행 수", len(df))
+            st.metric("Total Rows", len(df))
         with col2:
-            st.metric("총 열 수", len(df.columns))
+            st.metric("Total Columns", len(df.columns))
         with col3:
-            st.metric("컬럼 목록", ", ".join(df.columns[:3]) + "...")
+            st.metric("Columns", ", ".join(df.columns[:3]) + "...")
         
-        # 필수 컬럼 존재 확인
+        # Check required columns
         required_cols = ['Listing_Position', 'Sentiment_Score', 'Visitor_Review_Count', 'Blog_Review_Count', 'Keywords_Excl_Food']
         missing_cols = [col for col in required_cols if col not in df.columns]
         
         if missing_cols:
-            st.error(f"❌ 필수 컬럼이 누락되었습니다: {', '.join(missing_cols)}")
-            st.info(f"📌 필요한 컬럼: {', '.join(required_cols)}")
-            st.info(f"📌 현재 파일의 컬럼: {', '.join(df.columns.tolist())}")
+            st.error(f"❌ Missing required columns: {', '.join(missing_cols)}")
+            st.info(f"📌 Required columns: {', '.join(required_cols)}")
+            st.info(f"📌 Current file columns: {', '.join(df.columns.tolist())}")
             st.stop()
         
-        # 열 정리
+        # Data cleaning
         df['Listing_Position'] = df['Listing_Position'].astype(str)
         
         st.divider()
         
         # ------------------------
-        st.header("1️⃣ 감정 점수 평균 (상단 vs 하단)")
+        st.header("1️⃣ Average Sentiment Score (Top vs Bottom)")
         avg_sentiment = df.groupby('Listing_Position')['Sentiment_Score'].mean()
         
         col1, col2 = st.columns([2, 1])
@@ -91,26 +60,26 @@ if uploaded_file is not None:
             st.bar_chart(avg_sentiment)
         with col2:
             st.dataframe(avg_sentiment.reset_index().rename(columns={
-                'Listing_Position': '위치',
-                'Sentiment_Score': '평균 감정 점수'
+                'Listing_Position': 'Position',
+                'Sentiment_Score': 'Avg Sentiment Score'
             }), use_container_width=True)
         
         st.divider()
         
         # ------------------------
-        st.header("2️⃣ 방문자 리뷰 수 & 블로그 리뷰 수 비교")
-        st.subheader("박스플롯으로 비교")
+        st.header("2️⃣ Visitor Review Count & Blog Review Count Comparison")
+        st.subheader("Boxplot Comparison")
         
         fig1, ax1 = plt.subplots(1, 2, figsize=(14, 5))
         sns.boxplot(data=df, x='Listing_Position', y='Visitor_Review_Count', ax=ax1[0], palette='Set2')
-        ax1[0].set_title("📦 방문자 리뷰 수", fontsize=14, fontweight='bold')
-        ax1[0].set_xlabel("위치", fontsize=12)
-        ax1[0].set_ylabel("리뷰 수", fontsize=12)
+        ax1[0].set_title("📦 Visitor Review Count", fontsize=14, fontweight='bold')
+        ax1[0].set_xlabel("Position", fontsize=12)
+        ax1[0].set_ylabel("Review Count", fontsize=12)
         
         sns.boxplot(data=df, x='Listing_Position', y='Blog_Review_Count', ax=ax1[1], palette='Set3')
-        ax1[1].set_title("📦 블로그 리뷰 수", fontsize=14, fontweight='bold')
-        ax1[1].set_xlabel("위치", fontsize=12)
-        ax1[1].set_ylabel("리뷰 수", fontsize=12)
+        ax1[1].set_title("📦 Blog Review Count", fontsize=14, fontweight='bold')
+        ax1[1].set_xlabel("Position", fontsize=12)
+        ax1[1].set_ylabel("Review Count", fontsize=12)
         
         plt.tight_layout()
         st.pyplot(fig1)
@@ -119,7 +88,7 @@ if uploaded_file is not None:
         st.divider()
         
         # ------------------------
-        st.header("3️⃣ 감정 점수 vs 리뷰 수 (산점도)")
+        st.header("3️⃣ Sentiment Score vs Review Count (Scatter Plot)")
         
         fig2, ax2 = plt.subplots(figsize=(10, 6))
         sns.scatterplot(
@@ -131,10 +100,10 @@ if uploaded_file is not None:
             s=100,
             palette='viridis'
         )
-        ax2.set_title("🟣 감정 점수 vs 방문자 리뷰 수", fontsize=14, fontweight='bold')
-        ax2.set_xlabel("방문자 리뷰 수", fontsize=12)
-        ax2.set_ylabel("감정 점수", fontsize=12)
-        ax2.legend(title='위치')
+        ax2.set_title("🟣 Sentiment Score vs Visitor Review Count", fontsize=14, fontweight='bold')
+        ax2.set_xlabel("Visitor Review Count", fontsize=12)
+        ax2.set_ylabel("Sentiment Score", fontsize=12)
+        ax2.legend(title='Position')
         plt.tight_layout()
         st.pyplot(fig2)
         plt.close()
@@ -142,35 +111,15 @@ if uploaded_file is not None:
         st.divider()
         
         # ------------------------
-        st.header("4️⃣ 키워드 기반 워드클라우드 (음식 키워드 제외)")
+        st.header("4️⃣ Keyword-based Word Cloud (Food Keywords Excluded)")
         
         text = " ".join(df["Keywords_Excl_Food"].dropna().astype(str))
         if len(text.strip()) > 0:
-            # 한글 폰트 경로 설정 (시스템별, 여러 경로 시도)
-            font_path = None
-            if platform.system() == 'Windows':
-                # Windows 여러 폰트 경로 시도
-                possible_fonts = [
-                    'c:/Windows/Fonts/malgun.ttf',
-                    'c:/Windows/Fonts/malgunbd.ttf',
-                    'c:/Windows/Fonts/NanumGothic.ttf',
-                    'C:/Windows/Fonts/gulim.ttc'
-                ]
-                import os
-                for font in possible_fonts:
-                    if os.path.exists(font):
-                        font_path = font
-                        break
-            elif platform.system() == 'Darwin':
-                font_path = '/System/Library/Fonts/AppleGothic.ttf'
-            # Linux는 기본값 사용
-            
             try:
                 wordcloud = WordCloud(
                     width=1200,
                     height=600,
                     background_color='white',
-                    font_path=font_path,
                     colormap='viridis',
                     relative_scaling=0.5,
                     min_font_size=10
@@ -179,66 +128,65 @@ if uploaded_file is not None:
                 fig3, ax3 = plt.subplots(figsize=(14, 7))
                 ax3.imshow(wordcloud, interpolation='bilinear')
                 ax3.axis("off")
-                ax3.set_title("☁️ 키워드 워드클라우드", fontsize=16, fontweight='bold', pad=20)
+                ax3.set_title("Word Cloud - Keywords", fontsize=16, fontweight='bold', pad=20)
                 plt.tight_layout()
                 st.pyplot(fig3)
                 plt.close()
             except Exception as e:
-                st.warning(f"⚠️ 워드클라우드 생성 중 오류: {str(e)}")
-                st.info("한글 폰트가 설치되어 있지 않을 수 있습니다.")
+                st.warning(f"⚠️ Error generating word cloud: {str(e)}")
         else:
-            st.info("ℹ️ 키워드 데이터가 부족하거나 비어 있습니다.")
+            st.info("ℹ️ Insufficient or empty keyword data.")
         
         st.divider()
         
         # ------------------------
         if 'Category' in df.columns:
-            st.header("5️⃣ 업종별 감정 점수 비교")
+            st.header("5️⃣ Sentiment Score by Category")
             
             fig4, ax4 = plt.subplots(figsize=(12, 6))
             sns.boxplot(data=df, x='Category', y='Sentiment_Score', palette='pastel')
-            ax4.set_title("카테고리별 감정 점수", fontsize=14, fontweight='bold')
-            ax4.set_xlabel("카테고리", fontsize=12)
-            ax4.set_ylabel("감정 점수", fontsize=12)
+            ax4.set_title("Sentiment Score by Category", fontsize=14, fontweight='bold')
+            ax4.set_xlabel("Category", fontsize=12)
+            ax4.set_ylabel("Sentiment Score", fontsize=12)
             plt.xticks(rotation=45, ha='right')
             plt.tight_layout()
             st.pyplot(fig4)
             plt.close()
             
-        # 데이터 다운로드
+        # Data download
         st.divider()
-        st.header("📥 데이터 다운로드")
+        st.header("📥 Download Data")
         csv = df.to_csv(index=False).encode('utf-8-sig')
         st.download_button(
-            label="💾 CSV 파일로 다운로드",
+            label="💾 Download as CSV",
             data=csv,
             file_name='naver_review_analysis.csv',
             mime='text/csv',
         )
         
     except Exception as e:
-        st.error(f"❌ 파일을 읽는 중 오류가 발생했습니다: {str(e)}")
-        st.info("💡 엑셀 파일 형식이 올바른지 확인해주세요.")
+        st.error(f"❌ Error reading file: {str(e)}")
+        st.info("💡 Please check if the Excel file format is correct.")
         
 else:
-    st.info("👆 상단에서 엑셀 파일을 업로드하면 분석이 시작됩니다.")
+    st.info("👆 Upload an Excel file above to start the analysis.")
     
-    # 사용 안내
-    with st.expander("📖 사용 방법", expanded=True):
+    # User guide
+    with st.expander("📖 How to Use", expanded=True):
         st.markdown("""
-        ### 필수 컬럼
-        업로드하는 엑셀 파일에는 다음 컬럼들이 반드시 포함되어야 합니다:
+        ### Required Columns
+        The uploaded Excel file must include the following columns:
         
-        - `Listing_Position`: 리스팅 위치 (예: 상단, 하단)
-        - `Sentiment_Score`: 감정 점수
-        - `Visitor_Review_Count`: 방문자 리뷰 수
-        - `Blog_Review_Count`: 블로그 리뷰 수
-        - `Keywords_Excl_Food`: 키워드 (음식 제외)
+        - `Listing_Position`: Listing position (e.g., Top, Bottom)
+        - `Sentiment_Score`: Sentiment score
+        - `Visitor_Review_Count`: Visitor review count
+        - `Blog_Review_Count`: Blog review count
+        - `Keywords_Excl_Food`: Keywords (food excluded)
         
-        ### 선택 컬럼
-        - `Category`: 업종 카테고리 (있으면 추가 분석 제공)
+        ### Optional Columns
+        - `Category`: Business category (provides additional analysis if present)
         
-        ### 지원 파일 형식
-        - `.xlsx` (Excel 2007 이상)
+        ### Supported File Formats
+        - `.xlsx` (Excel 2007 or later)
         - `.xls` (Excel 97-2003)
         """)
